@@ -1,54 +1,18 @@
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *.pyo
 *.so
-
-# Distribution / packaging
-.Python
-env/
-venv/
-ENV/
-build/
-dist/
-*.egg-info/
-*.egg
-*.whl
-
-# Buildozer
-buildozer.spec
-bin/
-.buildozer/
-.gradle/
-*.apk
-*.aab
-
-# Kivy logs / debug
 *.log
-*.kivy
-*.kvd
-.kivy/
-
-# IDE / editor config
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Matplotlib cache
-.matplotlib/
-
-# System files
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# Jupyter / IPython
-.ipynb_checkpoints/
-
-# PDF or generated charts
 *.pdf
 *.png
-
-# Python packaging
-pip-wheel-metadata/
+.buildozer/
+bin/
+build/
+dist/
+*.apk
+*.aab
+venv/
+.idea/
+.vscode/
+.kivy/
+.kivy-garden/

@@ -1,34 +1,62 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.gridlayout import GridLayout
 from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
-import yfinance as yf
-import matplotlib.pyplot as plt
-from kivy.uix.label import Label
 from kivy.core.window import Window
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
 
-Window.size = (800, 600)
+# Set default window size
+Window.size = (1000, 800)
 
-class StockChart(BoxLayout):
+# Get live list of S&P 500 tickers from Wikipedia
+def get_sp500_tickers():
+    url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
+    df = pd.read_html(url, header=0)[0]
+    return df['Symbol'].tolist()
+
+# Main layout that scrolls through multiple stock charts
+class StockScroll(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
-        symbol = "VOO"  # S&P 500 ETF
 
-        try:
-            data = yf.download(symbol, period="6mo")
-            if data is None or data.empty:
-                raise ValueError("No data downloaded.")
+        # ScrollView holds all charts
+        scroll = ScrollView()
+        grid = GridLayout(cols=1, spacing=10, size_hint_y=None, padding=10)
+        grid.bind(minimum_height=grid.setter('height'))
 
-            fig, ax = plt.subplots()
-            data['Close'].plot(ax=ax, title=f"{symbol} Close Price")
-            self.add_widget(FigureCanvasKivyAgg(fig))
+        tickers = get_sp500_tickers()[:10]  # ⚠️ Adjust this number to load more
 
-        except Exception as e:
-            self.add_widget(Label(text=f"Failed to load data: {e}"))
+        for symbol in tickers:
+            try:
+                data = yf.download(symbol, period="1mo", progress=False)
+                if data.empty:
+                    continue
 
-class StockApp(App):
+                fig, ax = plt.subplots(figsize=(8, 3))
+                data['Close'].plot(ax=ax, title=symbol)
+                ax.set_ylabel("Price ($)")
+                fig.tight_layout()
+
+                canvas = FigureCanvasKivyAgg(fig)
+                canvas.size_hint_y = None
+                canvas.height = 300
+
+                grid.add_widget(canvas)
+
+            except Exception as e:
+                print(f"Error loading {symbol}: {e}")
+
+        scroll.add_widget(grid)
+        self.add_widget(scroll)
+
+# Kivy App
+class SP500App(App):
     def build(self):
-        return StockChart()
+        return StockScroll()
 
-if __name__ == "__main__":
-    StockApp().run()
+if __name__ == '__main__':
+    SP500App().run()

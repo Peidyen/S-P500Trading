@@ -2,34 +2,48 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
-from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
 from kivy.core.window import Window
-import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
+from kivy.garden.matplotlib.backend_kivyagg import FigureCanvasKivyAgg
+from kivy.uix.widget import Widget
 
-# Set default window size
+import matplotlib
+matplotlib.use('Agg')  # Safe backend for Android & embedded use
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import yfinance as yf
+
+# Set window size (optional for Android debugging)
 Window.size = (1000, 800)
 
-# Get live list of S&P 500 tickers from Wikipedia
+# Disable touch interaction with matplotlib canvas
+class NoTouchCanvas(FigureCanvasKivyAgg):
+    def on_touch_down(self, touch): return False
+    def on_touch_move(self, touch): return False
+    def on_touch_up(self, touch): return False
+
+    # Stub this to prevent crash
+    def motion_notify_event(self, x, y, guiEvent=None):
+        pass
+
+
+# Get live S&P 500 symbols from Wikipedia
 def get_sp500_tickers():
     url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
     df = pd.read_html(url, header=0)[0]
     return df['Symbol'].tolist()
 
-# Main layout that scrolls through multiple stock charts
+# Main scrollable chart layout
 class StockScroll(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
 
-        # ScrollView holds all charts
         scroll = ScrollView()
         grid = GridLayout(cols=1, spacing=10, size_hint_y=None, padding=10)
         grid.bind(minimum_height=grid.setter('height'))
 
-        tickers = get_sp500_tickers()[:10]  # ⚠️ Adjust this number to load more
-
+        tickers = get_sp500_tickers()[:10]  # Limit to 10 for performance
         for symbol in tickers:
             try:
                 data = yf.download(symbol, period="1mo", progress=False)
@@ -41,7 +55,7 @@ class StockScroll(BoxLayout):
                 ax.set_ylabel("Price ($)")
                 fig.tight_layout()
 
-                canvas = FigureCanvasKivyAgg(fig)
+                canvas = NoTouchCanvas(fig)
                 canvas.size_hint_y = None
                 canvas.height = 300
 
@@ -53,7 +67,7 @@ class StockScroll(BoxLayout):
         scroll.add_widget(grid)
         self.add_widget(scroll)
 
-# Kivy App
+# App entry point
 class SP500App(App):
     def build(self):
         return StockScroll()
